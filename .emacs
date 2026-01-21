@@ -248,7 +248,7 @@
 (global-set-key (kbd "C-c RET") 'gptel-send)
 
 ;; MCP (Model Context Protocol) for gptel
-(add-to-list 'load-path "~/.emacs.d/site-lisp/mcp")
+(add-to-list 'load-path (expand-file-name "site-lisp/mcp" user-emacs-directory))
 (require 'mcp)
 (require 'mcp-hub)
 
@@ -303,7 +303,7 @@
   (define-key vterm-mode-map (kbd "M-]") nil))
 
 ;; claude-code-ide
-(add-to-list 'load-path "~/.emacs.d/site-lisp/claude-code-ide")
+(add-to-list 'load-path (expand-file-name "site-lisp/claude-code-ide" user-emacs-directory))
 (require 'claude-code-ide)
 (setq claude-code-ide-terminal-backend 'vterm)
 (setq claude-code-ide-window-side 'bottom)
@@ -313,7 +313,7 @@
 (global-set-key (kbd "C-c C-'") 'claude-code-ide-menu)
 
 ;; SpecFlow - spec-driven development workflow
-(add-to-list 'load-path "~/.emacs.d/specflow/src")
+(add-to-list 'load-path (expand-file-name "specflow/src" user-emacs-directory))
 (require 'specflow)
 
 ;; Custom gptel prompt for Claude prompt engineering
