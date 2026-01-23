@@ -41,10 +41,11 @@ git clone https://github.com/tedmellors/specflow.git ~/emacs/.emacs.d/specflow
 emacs
 ```
 
-On first launch, `vterm` will recompile its native module for your architecture. This happens automatically.
+On first launch:
+- Packages (helm, ranger, gptel, vterm) will auto-install from MELPA
+- vterm will compile its native module (requires cmake/libtool)
 
 ## Notes
 
 - Config detects GUI vs terminal mode automatically via `(display-graphic-p)`
-- Packages are included in the repo for offline/reproducible setup
-- The `vterm-module.so` is architecture-specific and will rebuild as needed
+- Packages auto-install on first boot if missing

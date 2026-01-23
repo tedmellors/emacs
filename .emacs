@@ -8,6 +8,16 @@
         ("melpa" . "https://melpa.org/packages/")))
 (package-initialize)
 
+;; Auto-install packages if missing
+(defvar my/packages '(helm ranger gptel vterm)
+  "Packages to ensure are installed.")
+
+(unless (seq-every-p #'package-installed-p my/packages)
+  (package-refresh-contents)
+  (dolist (pkg my/packages)
+    (unless (package-installed-p pkg)
+      (package-install pkg))))
+
 ;; Basic preferences
 (prefer-coding-system 'utf-8)
 (setq mac-command-modifier 'meta)
@@ -195,9 +205,6 @@
 (setq org-log-done 'time)
 
 ;; gptel (OpenAI/LLM)
-(unless (package-installed-p 'gptel)
-  (package-refresh-contents)
-  (package-install 'gptel))
 (require 'gptel)
 (require 'auth-source)
 (setq auth-sources '("~/.authinfo"))
@@ -318,46 +325,16 @@
 (setq claude-code-ide-window-height 20)
 (setq claude-code-ide-debug t)
 (setq claude-code-ide-use-ide-diff nil)  ; Prevent ediff from opening in new tab on edits
-(global-set-key (kbd "C-c C-'") 'claude-code-ide-menu)
+
+
+;; Keybinding differs between GUI and terminal
+(if (display-graphic-p)
+    (global-set-key (kbd "C-c C-'") 'claude-code-ide-menu)
+  (global-set-key (kbd "C-c '") 'claude-code-ide-menu))
 
 ;; SpecFlow - spec-driven development workflow
 (add-to-list 'load-path (expand-file-name "specflow/src/specflow" user-emacs-directory))
 (require 'specflow)
-
-;; Custom gptel prompt for Claude prompt engineering
-(with-eval-after-load 'gptel
-  (add-to-list 'gptel-directives
-               '(claude-prompt . "You write *one ready-to-send prompt for Claude* to implement a requested change in the GIDEON repo.
-
-*Repo context Claude must follow*
-- High-level context: =docs/overview.org=
-- Project-wide tasks: =./todo.org=
-- Module workflow/rules: =modules/<MODULE>/CLAUDE.md=
-- Module spec + tasks: =modules/<MODULE>/spec.org= and =modules/<MODULE>/todo.org=
-
-*Rules you must enforce in the Claude prompt*
-- Work on a feature branch (never directly on =main=).
-- Stay within one module unless the user explicitly approves otherwise.
-- Read the files above before coding; do not guess paths or behavior.
-- Keep diffs minimal; run relevant tests.
-- Update TODOs at the end: both =./todo.org= and =modules/<MODULE>/todo.org=.
-- At completion, Claude must report: summary, files changed, tests run/results, and proposed next step.
-
-*Your output format (always)*
-Return exactly one section:
-
-*Prompt for Claude (copy/paste)*
-- Context (module, goal)
-- Pre-work (files to read)
-- Tasks (spec → implementation → tests → docs if needed)
-- Stop point (where Claude must stop and wait for approval)
-- Completion report requirements
-
-*When information is missing*
-Ask up to 5 clarifying questions instead of guessing (e.g., module name, desired stop point, acceptance criteria).")))
-
-;; Open todo.org on startup
-(find-file "/Users/tedmellors/Documents/Documents_Ted_Mac_air/TRM/00_Admin/MASTER_TASKS.org")
 
 (custom-set-variables
  ;; custom-set-variables was added by Custom.
