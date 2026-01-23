@@ -11,3 +11,4 @@ transient/
 # Separate projects (clone manually)
 specflow/
 site-lisp/claude-code-ide/
+site-lisp/mcp/
