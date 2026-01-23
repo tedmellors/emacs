@@ -15,14 +15,21 @@
 (setq inhibit-startup-screen t)
 (defalias 'yes-or-no-p 'y-or-n-p)
 
-;; UI
-(tool-bar-mode -1)
+;; UI - shared settings
 (menu-bar-mode -1)
-(scroll-bar-mode -1)
-(setf (cdr (assq 'continuation fringe-indicator-alist)) '(nil nil))
 (load-theme 'deeper-blue t)
-(set-face-attribute 'default nil :height 150)
-(add-hook 'emacs-startup-hook 'toggle-frame-fullscreen)
+
+;; UI - GUI-specific settings
+(when (display-graphic-p)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+  (setf (cdr (assq 'continuation fringe-indicator-alist)) '(nil nil))
+  (set-face-attribute 'default nil :height 150)
+  (add-hook 'emacs-startup-hook 'toggle-frame-fullscreen))
+
+;; UI - Terminal-specific settings
+(unless (display-graphic-p)
+  (xterm-mouse-mode 1))
 
 ;; Tab bar
 (tab-bar-mode 1)
