@@ -1,8 +1,12 @@
+# Packages (auto-installed on first boot)
+elpa/
+
 # Generated/cache (local session data)
 eln-cache/
 auto-save-list/
 backups/
 transient/
+*.elc
 
 # Separate projects
 specflow/
