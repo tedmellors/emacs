@@ -29,7 +29,13 @@ ln -s ~/emacs/.emacs ~/.emacs
 ln -s ~/emacs/.emacs.d ~/.emacs.d
 ```
 
-### 3. Launch Emacs
+### 3. Clone specflow
+
+```bash
+git clone https://github.com/tedmellors/specflow.git ~/emacs/.emacs.d/specflow
+```
+
+### 4. Launch Emacs
 
 ```bash
 emacs
