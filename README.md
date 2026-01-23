@@ -39,9 +39,18 @@ git clone https://github.com/lizqwerscott/mcp.el ~/emacs/.emacs.d/site-lisp/mcp
 
 ### 4. Launch Emacs
 
+**GUI:**
 ```bash
 emacs
 ```
+
+**Terminal (in tmux):**
+```bash
+tmux new -s emacs
+emacs -nw
+```
+
+Use `-nw` (no window) to run Emacs in terminal mode inside tmux.
 
 On first launch:
 - Packages (helm, ranger, gptel, vterm) will auto-install from MELPA
