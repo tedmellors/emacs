@@ -62,8 +62,11 @@
   (call-interactively #'tab-bar-rename-tab))
 
 (global-set-key (kbd "M-n") #'my/tab-new-and-rename)
-(global-set-key (kbd "S-<left>")  #'tab-bar-move-tab-backward)
-(global-set-key (kbd "S-<right>") (lambda () (interactive) (tab-bar-move-tab 1)))
+
+;; Tab move keybindings (M-{ M-} works in both GUI and terminal)
+(global-set-key (kbd "M-{") #'tab-bar-move-tab-backward)
+(global-set-key (kbd "M-}") (lambda () (interactive) (tab-bar-move-tab 1)))
+(global-set-key (kbd "M-N") #'tab-bar-close-tab)
 
 ;; Helm
 (require 'helm)
@@ -111,7 +114,12 @@
 (global-set-key (kbd "C-c r") (lambda () (interactive) (revert-buffer t t)))  ; Revert without prompts
 (global-set-key (kbd "M-k") 'kill-current-buffer)
 (global-set-key (kbd "M-o") 'next-multiframe-window)
-(global-set-key (kbd "M-i") 'previous-multiframe-window)
+
+;; Window resizing (vim-style: h/l horizontal, i/m vertical)
+(global-set-key (kbd "M-i") (lambda () (interactive) (enlarge-window 2)))          ; up
+(global-set-key (kbd "M-m") (lambda () (interactive) (shrink-window 2)))           ; down
+(global-set-key (kbd "M-h") (lambda () (interactive) (shrink-window-horizontally 2)))  ; left
+(global-set-key (kbd "M-l") (lambda () (interactive) (enlarge-window-horizontally 2))) ; right
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") 'delete-other-windows)
 (global-set-key (kbd "M-2") 'split-window-below)
@@ -148,8 +156,6 @@
 
 ;; Org-mode settings
 (require 'org)
-(define-key org-mode-map (kbd "S-<left>")  #'tab-bar-move-tab-backward)
-(define-key org-mode-map (kbd "S-<right>") (lambda () (interactive) (tab-bar-move-tab 1)))
 
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
@@ -313,9 +319,23 @@
     (package-refresh-contents)
     (package-install pkg)))
 
-;; Let Emacs handle M-] in vterm for tab switching
+;; Let Emacs handle these keys in vterm (not passed to terminal)
 (with-eval-after-load 'vterm
-  (define-key vterm-mode-map (kbd "M-]") nil))
+  ;; Tab navigation
+  (define-key vterm-mode-map (kbd "M-[") nil)
+  (define-key vterm-mode-map (kbd "M-]") nil)
+  (define-key vterm-mode-map (kbd "M-{") nil)
+  (define-key vterm-mode-map (kbd "M-}") nil)
+  (define-key vterm-mode-map (kbd "M-N") nil)
+  ;; Window resizing
+  (define-key vterm-mode-map (kbd "M-i") nil)
+  (define-key vterm-mode-map (kbd "M-m") nil)
+  (define-key vterm-mode-map (kbd "M-h") nil)
+  (define-key vterm-mode-map (kbd "M-l") nil)
+  ;; Other useful keys
+  (define-key vterm-mode-map (kbd "M-o") nil)
+  (define-key vterm-mode-map (kbd "M-k") nil)
+  (define-key vterm-mode-map (kbd "M-n") nil))
 
 ;; claude-code-ide
 (add-to-list 'load-path (expand-file-name "site-lisp/claude-code-ide" user-emacs-directory))
