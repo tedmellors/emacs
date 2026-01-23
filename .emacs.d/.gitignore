@@ -8,5 +8,6 @@ backups/
 transient/
 *.elc
 
-# Separate projects
+# Separate projects (clone manually)
 specflow/
+site-lisp/claude-code-ide/
