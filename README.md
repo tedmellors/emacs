@@ -34,6 +34,7 @@ ln -s ~/emacs/.emacs.d ~/.emacs.d
 ```bash
 git clone https://github.com/tedmellors/specflow.git ~/emacs/.emacs.d/specflow
 git clone https://github.com/manzaltu/claude-code-ide.el ~/emacs/.emacs.d/site-lisp/claude-code-ide
+git clone https://github.com/lizqwerscott/mcp.el ~/emacs/.emacs.d/site-lisp/mcp
 ```
 
 ### 4. Launch Emacs
