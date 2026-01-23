@@ -91,6 +91,7 @@
     (message "Eval worked!")))
 
 (global-set-key (kbd "C-c e") #'my/eval-buffer-stay)
+(global-set-key (kbd "C-c r") (lambda () (interactive) (revert-buffer t t)))  ; Revert without prompts
 (global-set-key (kbd "M-k") 'kill-current-buffer)
 (global-set-key (kbd "M-o") 'next-multiframe-window)
 (global-set-key (kbd "M-i") 'previous-multiframe-window)
@@ -313,7 +314,7 @@
 (global-set-key (kbd "C-c C-'") 'claude-code-ide-menu)
 
 ;; SpecFlow - spec-driven development workflow
-(add-to-list 'load-path (expand-file-name "specflow/src" user-emacs-directory))
+(add-to-list 'load-path (expand-file-name "specflow/src/specflow" user-emacs-directory))
 (require 'specflow)
 
 ;; Custom gptel prompt for Claude prompt engineering
