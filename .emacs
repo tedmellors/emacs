@@ -9,7 +9,7 @@
 (package-initialize)
 
 ;; Auto-install packages if missing
-(defvar my/packages '(helm ranger gptel vterm)
+(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile)
   "Packages to ensure are installed.")
 
 (unless (seq-every-p #'package-installed-p my/packages)
@@ -68,6 +68,19 @@
 (require 'helm)
 (global-set-key (kbd "M-x") 'helm-M-x)
 (helm-mode 1)
+
+;; Projectile
+(require 'projectile)
+(projectile-mode 1)
+(setq projectile-completion-system 'helm)
+(setq projectile-switch-project-action 'projectile-dired)
+(setq projectile-indexing-method 'native)  ; Bypass git, see all files including dotfiles
+(setq projectile-enable-caching t)
+(define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
+
+;; Helm-Projectile integration
+(require 'helm-projectile)
+(helm-projectile-on)
 
 ;; Ranger
 (require 'ranger)
@@ -155,6 +168,10 @@
 ;; Override org-edit-special so C-c ' opens claude-code-ide
 (define-key org-mode-map (kbd "C-c '") 'claude-code-ide-menu)
 (define-key org-mode-map (kbd "C-c C-'") 'claude-code-ide-menu)
+
+;; Terminal-friendly subtree movement (M-S-<up>/<down> don't work in terminal)
+(define-key org-mode-map (kbd "M-p") 'org-move-subtree-up)
+(define-key org-mode-map (kbd "M-P") 'org-move-subtree-down)
 
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
@@ -363,7 +380,9 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
- '(package-selected-packages nil))
+ '(package-selected-packages
+   '(gptel helm helm-projectile projectile ranger vterm web-server
+	   websocket)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
