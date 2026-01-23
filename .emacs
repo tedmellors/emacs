@@ -37,10 +37,6 @@
   (set-face-attribute 'default nil :height 150)
   (add-hook 'emacs-startup-hook 'toggle-frame-fullscreen))
 
-;; UI - Terminal-specific settings
-(unless (display-graphic-p)
-  (xterm-mouse-mode 1))
-
 ;; Tab bar
 (tab-bar-mode 1)
 (set-face-attribute 'tab-bar-tab nil
@@ -156,6 +152,9 @@
 
 ;; Org-mode settings
 (require 'org)
+;; Override org-edit-special so C-c ' opens claude-code-ide
+(define-key org-mode-map (kbd "C-c '") 'claude-code-ide-menu)
+(define-key org-mode-map (kbd "C-c C-'") 'claude-code-ide-menu)
 
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
@@ -332,6 +331,9 @@
   (define-key vterm-mode-map (kbd "M-m") nil)
   (define-key vterm-mode-map (kbd "M-h") nil)
   (define-key vterm-mode-map (kbd "M-l") nil)
+  ;; Scrolling
+  (define-key vterm-mode-map (kbd "C-v") nil)
+  (define-key vterm-mode-map (kbd "M-v") nil)
   ;; Other useful keys
   (define-key vterm-mode-map (kbd "M-o") nil)
   (define-key vterm-mode-map (kbd "M-k") nil)
