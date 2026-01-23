@@ -47,6 +47,18 @@ On first launch:
 - Packages (helm, ranger, gptel, vterm) will auto-install from MELPA
 - vterm will compile its native module (requires cmake/libtool)
 
+## iTerm2 Settings (for terminal Emacs)
+
+If using iTerm2 and you see "OI" printed when switching focus, disable focus reporting:
+
+```bash
+defaults write com.googlecode.iterm2 FocusReportingEnabled -bool false
+```
+
+Then restart iTerm2.
+
+Or manually: iTerm2 → Settings → Advanced → search "Focus Reporting" → set to No.
+
 ## Notes
 
 - Config detects GUI vs terminal mode automatically via `(display-graphic-p)`
