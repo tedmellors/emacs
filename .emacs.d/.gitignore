@@ -1,13 +1,8 @@
-# Package manager (auto-installed)
-elpa/
-straight/
-
-# Generated/cache
+# Generated/cache (local session data)
 eln-cache/
 auto-save-list/
 backups/
 transient/
-*.elc
 
 # Separate projects
 specflow/
