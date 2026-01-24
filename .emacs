@@ -9,7 +9,7 @@
 (package-initialize)
 
 ;; Auto-install packages if missing
-(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile avy magit)
+(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile avy magit expand-region)
   "Packages to ensure are installed.")
 
 (unless (seq-every-p #'package-installed-p my/packages)
@@ -74,6 +74,10 @@
 (global-set-key (kbd "C-c j") 'avy-goto-char-timer)
 (setq avy-keys '(?a ?s ?d ?f ?g ?h ?j ?k ?l))
 (setq avy-background t)
+
+;; Expand-region - incrementally expand selection
+(require 'expand-region)
+(global-set-key (kbd "M-r") 'er/expand-region)
 
 ;; Projectile
 (require 'projectile)
@@ -407,8 +411,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(avy gptel helm helm-projectile magit projectile ranger vterm
-	 web-server websocket)))
+   '(avy expand-region gptel helm helm-projectile magit projectile ranger
+	 vterm web-server websocket)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
