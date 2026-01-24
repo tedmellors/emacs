@@ -102,6 +102,26 @@
   (interactive)
   (ranger))
 
+;; --- Ranger/vterm fix (delete this block to disable) ---
+;; When in vterm, switch to another window before opening ranger
+;; When quitting ranger, return to the vterm window
+(defvar my/ranger-return-window nil "Window to return to after ranger.")
+(defun my/ranger-escape-vterm ()
+  "If in vterm, save window and switch to another window."
+  (when (derived-mode-p 'vterm-mode)
+    (setq my/ranger-return-window (selected-window))
+    (if (one-window-p)
+        (progn (split-window-right) (other-window 1))
+      (other-window 1))))
+(defun my/ranger-return-to-vterm ()
+  "Return to saved vterm window after ranger closes."
+  (when (and my/ranger-return-window (window-live-p my/ranger-return-window))
+    (select-window my/ranger-return-window)
+    (setq my/ranger-return-window nil)))
+(advice-add 'ranger :before (lambda (&rest _) (my/ranger-escape-vterm)))
+(advice-add 'ranger-close :after (lambda (&rest _) (my/ranger-return-to-vterm)))
+;; --- End ranger/vterm fix ---
+
 ;; Global settings
 (setq line-number-mode t)
 (setq backup-directory-alist '(("." . "~/.emacs.d/backups")))
