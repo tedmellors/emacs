@@ -158,7 +158,7 @@
 (global-set-key (kbd "M-i") (lambda () (interactive) (enlarge-window 2)))          ; up
 (global-set-key (kbd "M-m") (lambda () (interactive) (shrink-window 2)))           ; down
 (global-set-key (kbd "M-h") (lambda () (interactive) (shrink-window-horizontally 2)))  ; left
-(global-set-key (kbd "M-l") (lambda () (interactive) (enlarge-window-horizontally 2))) ; right
+;; M-l reserved for org-mode promote/demote
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") 'delete-other-windows)
 (global-set-key (kbd "M-2") 'split-window-below)
@@ -202,6 +202,8 @@
 ;; Terminal-friendly subtree movement (M-S-<up>/<down> don't work in terminal)
 (define-key org-mode-map (kbd "M-p") 'org-move-subtree-up)
 (define-key org-mode-map (kbd "M-P") 'org-move-subtree-down)
+(define-key org-mode-map (kbd "M-l") 'org-promote-subtree)
+(define-key org-mode-map (kbd "M-L") 'org-demote-subtree)
 
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
@@ -237,7 +239,8 @@
 
 ;; Org TODO keywords
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i)" "WAITING(w)" "MEETING-SCHEDULED(m)" "RECIPES(r)" "NOTES(o)" "|" "DONE(d)" "MEETING-DONE(D)" "CANCELED(c)" "JOURNAL(j)")))
+      '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i)" "WAITING(w)" "MEETING-SCHEDULED(m)" "RECIPES(r)" "NOTES(o)" "|" "DONE(d)" "MEETING-DONE(D)" "CANCELED(c)" "JOURNAL(j)")
+        (sequence "TRAVEL(T)" "|")))
 
 (setq org-todo-keyword-faces
       '(("TODO" . "red")
@@ -250,11 +253,82 @@
         ("NOTES" . "gray")
         ("RECIPES" . "seashell1")
         ("MEETING-DONE" . "DeepSkyBlue")
-        ("JOURNAL" . "OliveDrab")))
+        ("JOURNAL" . "OliveDrab")
+        ("TRAVEL" . "cyan")))
 
 (setq-default org-display-custom-times t)
 (setq org-time-stamp-custom-formats '("<%a %b %e %Y>" . "<%a %b %e %Y %H:%M>"))
 (setq org-log-done 'time)
+
+;; ============================================================================
+;; Org-Agenda + Projectile Integration
+;; ============================================================================
+;; Dynamically builds org-agenda-files from projectile projects.
+;; Matches task files by naming convention (TASKS.org, next.org, 03_Tasks/, etc.)
+;; Usage:
+;;   C-c a n  - Dashboard of all NEXT tasks across projects
+;;   C-c a t  - All TODOs
+;;   M-x my/refresh-agenda-files - Rebuild agenda file list from projectile
+
+;; Patterns that identify task-related org files
+(defvar my/org-task-file-patterns
+  '("MASTER_TASKS\\.org$"
+    "TASKS\\.org$"
+    "/03_Tasks/.*\\.org$"
+    "/next\\.org$")
+  "Regex patterns matching task-related org files in projectile projects.")
+
+;; Cached list of agenda files
+(defvar my/org-agenda-project-files nil
+  "Cached list of org task files discovered from projectile projects.")
+
+(defun my/refresh-agenda-files ()
+  "Rebuild org-agenda-files by scanning projectile projects for task files."
+  (interactive)
+  (setq my/org-agenda-project-files
+        (seq-filter
+         (lambda (f)
+           (seq-some (lambda (pat) (string-match-p pat f))
+                     my/org-task-file-patterns))
+         (seq-mapcat
+          (lambda (proj)
+            (when (file-directory-p proj)
+              (ignore-errors
+                (directory-files-recursively proj "\\.org$"))))
+          projectile-known-projects)))
+  (setq org-agenda-files my/org-agenda-project-files)
+  (message "Org agenda files refreshed: %d files" (length org-agenda-files)))
+
+;; Refresh agenda files at startup (after projectile loads)
+(add-hook 'emacs-startup-hook
+          (lambda ()
+            (run-with-timer 2 nil #'my/refresh-agenda-files)))
+
+;; Custom agenda views
+(setq org-agenda-custom-commands
+      '(("n" "All NEXT tasks"
+         ((todo "NEXT"
+                ((org-agenda-overriding-header "━━━ NEXT Actions ━━━")))))
+        ("p" "In Progress"
+         ((todo "IN-PROGRESS"
+                ((org-agenda-overriding-header "━━━ In Progress ━━━")))))
+        ("m" "Scheduled Meetings"
+         ((todo "MEETING-SCHEDULED"
+                ((org-agenda-overriding-header "━━━ Upcoming Meetings ━━━")))))
+        ("d" "Dashboard"
+         ((todo "NEXT"
+                ((org-agenda-overriding-header "━━━ NEXT Actions ━━━")))
+          (todo "IN-PROGRESS"
+                ((org-agenda-overriding-header "━━━ In Progress ━━━")))
+          (todo "MEETING-SCHEDULED"
+                ((org-agenda-overriding-header "━━━ Upcoming Meetings ━━━")))
+          (todo "WAITING"
+                ((org-agenda-overriding-header "━━━ Waiting ━━━")))))))
+
+;; Keybinding for org-agenda
+(global-set-key (kbd "C-c a") 'org-agenda)
+
+;; ============================================================================
 
 ;; gptel (OpenAI/LLM)
 (require 'gptel)
@@ -402,7 +476,7 @@
   (global-set-key (kbd "C-c '") 'claude-code-ide-menu))
 
 ;; SpecFlow - spec-driven development workflow
-(add-to-list 'load-path (expand-file-name "specflow/src/specflow" user-emacs-directory))
+(add-to-list 'load-path (expand-file-name "specflow/src" user-emacs-directory))
 (require 'specflow)
 
 (custom-set-variables
