@@ -199,11 +199,48 @@
 (define-key org-mode-map (kbd "C-c '") 'claude-code-ide-menu)
 (define-key org-mode-map (kbd "C-c C-'") 'claude-code-ide-menu)
 
-;; Terminal-friendly subtree movement (M-S-<up>/<down> don't work in terminal)
-(define-key org-mode-map (kbd "M-p") 'org-move-subtree-up)
-(define-key org-mode-map (kbd "M-P") 'org-move-subtree-down)
+;; Terminal-friendly subtree/item movement (M-S-<up>/<down> don't work in terminal)
+;; Smart functions that work on both headings (*) and list items (-)
+(defun my/org-move-up ()
+  "Move subtree or list item up, depending on context."
+  (interactive)
+  (if (org-at-item-p)
+      (org-move-item-up)
+    (org-move-subtree-up)))
+
+(defun my/org-move-down ()
+  "Move subtree or list item down, depending on context."
+  (interactive)
+  (if (org-at-item-p)
+      (org-move-item-down)
+    (org-move-subtree-down)))
+
+(define-key org-mode-map (kbd "M-p") 'my/org-move-up)
+(define-key org-mode-map (kbd "M-P") 'my/org-move-down)
 (define-key org-mode-map (kbd "M-l") 'org-promote-subtree)
 (define-key org-mode-map (kbd "M-L") 'org-demote-subtree)
+
+;; Terminal-friendly heading/item insert (C-RET doesn't work in terminal)
+;; Inserts new heading/item AFTER current content, not at point
+(defun my/org-insert-respect-content ()
+  "Insert heading or list item after current content, depending on context.
+Preserves checkbox if current item has one."
+  (interactive)
+  (if (org-at-item-p)
+      (let ((has-checkbox (org-at-item-checkbox-p))
+            (item-col (current-indentation)))
+        (org-end-of-item)
+        ;; If still in list context, use org-insert-item
+        ;; Otherwise (at end of list), insert manually
+        (if (org-at-item-p)
+            (org-insert-item has-checkbox)
+          (beginning-of-line)
+          (open-line 1)
+          (indent-to item-col)
+          (insert (if has-checkbox "- [ ] " "- "))))
+    (org-insert-heading-respect-content)))
+
+(define-key org-mode-map (kbd "M-RET") 'my/org-insert-respect-content)
 
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
