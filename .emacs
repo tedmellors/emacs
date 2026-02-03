@@ -9,7 +9,7 @@
 (package-initialize)
 
 ;; Auto-install packages if missing
-(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile avy magit expand-region)
+(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile flx helm-flx avy magit expand-region)
   "Packages to ensure are installed.")
 
 (unless (seq-every-p #'package-installed-p my/packages)
@@ -84,13 +84,24 @@
 (projectile-mode 1)
 (setq projectile-completion-system 'helm)
 (setq projectile-switch-project-action 'projectile-dired)
-(setq projectile-indexing-method 'native)  ; Bypass git, see all files including dotfiles
+;; Use 'alien' indexing with fd for speed (70k+ files in TRM)
+;; fd is fast and includes untracked files (unlike git ls-files)
+(setq projectile-indexing-method 'alien)
+(setq projectile-generic-command "fd . --type f -0")  ; respects .gitignore, excludes hidden
 (setq projectile-enable-caching t)
 (define-key projectile-mode-map (kbd "C-c p") 'projectile-command-map)
 
 ;; Helm-Projectile integration
 (require 'helm-projectile)
+(setq helm-projectile-fuzzy-match nil)  ; Disable helm-projectile's fuzzy, let helm-flx handle it
 (helm-projectile-on)
+
+;; Better fuzzy matching via flx - prioritizes contiguous matches and filenames
+(require 'flx)
+(require 'helm-flx)
+(setq helm-flx-for-helm-find-files t)
+(setq helm-flx-for-helm-locate t)
+(helm-flx-mode 1)
 
 ;; Ranger
 (require 'ranger)
@@ -522,8 +533,8 @@ Preserves checkbox if current item has one."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(package-selected-packages
-   '(avy expand-region gptel helm helm-projectile magit projectile ranger
-	 vterm web-server websocket)))
+   '(avy expand-region gptel helm helm-flx helm-projectile magit
+	 projectile ranger vterm web-server websocket)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
