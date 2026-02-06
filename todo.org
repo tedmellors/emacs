@@ -1,5 +1,0 @@
-#+TITLE: Emacs Config TODO
-#+TODO: TODO NEXT WAITING | DONE CANCELLED
-
-* DONE M-{ and M-} tab reordering broken in org-mode buffers
-M-{ and M-} should change the order of tabs, but this doesn't work when in an org-mode buffer. Org-mode is likely overriding these keybindings with its own commands (org-backward-element / org-forward-element).
