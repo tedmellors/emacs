@@ -253,6 +253,10 @@ Preserves checkbox if current item has one."
 
 (define-key org-mode-map (kbd "M-RET") 'my/org-insert-respect-content)
 
+;; Let global tab-move keybindings (M-{ / M-}) work in org-mode
+(define-key org-mode-map (kbd "M-{") nil)
+(define-key org-mode-map (kbd "M-}") nil)
+
 ;; Org: start truncated (tables display correctly), toggle with C-c w
 (setq org-startup-truncated t)
 (add-hook 'org-mode-hook (lambda () (visual-line-mode -1)))
