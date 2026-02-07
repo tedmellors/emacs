@@ -173,6 +173,12 @@
 (add-to-list 'exec-path "/usr/local/bin")
 
 ;; Custom keybindings
+(defun my/eval-config ()
+  "Re-evaluate ~/.emacs config from anywhere."
+  (interactive)
+  (load-file "~/.emacs")
+  (message "Config reloaded!"))
+
 (defun my/eval-buffer-stay ()
   "Eval current buffer, then keep focus on the current buffer/window."
   (interactive)
@@ -183,7 +189,8 @@
     (when (buffer-live-p buf) (switch-to-buffer buf))
     (message "Eval worked!")))
 
-(global-set-key (kbd "C-c e") #'my/eval-buffer-stay)
+(global-set-key (kbd "C-c e") #'my/eval-config)
+(global-set-key (kbd "C-c E") #'my/eval-buffer-stay)
 (global-set-key (kbd "C-c r") (lambda () (interactive) (revert-buffer t t)))  ; Revert without prompts
 (global-set-key (kbd "M-k") 'kill-current-buffer)
 (global-set-key (kbd "M-o") 'next-multiframe-window)
