@@ -117,6 +117,29 @@
   (interactive)
   (ranger))
 
+;; --- Ranger yp/yn fix: copy path on first entry ---
+;; ranger's header deletion shifts dired-subdir-alist markers, causing
+;; dired-copy-filename-as-kill to return the directory instead of the file path
+;; when cursor is on the first file. Bypass dired-get-subdir by going straight
+;; to dired-get-marked-files.
+(defun ranger-copy-absolute-file-paths (&optional arg)
+  "Copy absolute file path(s) into the kill ring."
+  (interactive "P")
+  (let* ((files (dired-get-marked-files))
+         (string (mapconcat #'identity files " ")))
+    (unless (string= string "")
+      (kill-new string)
+      (message "%s" string))))
+
+(defun ranger-copy-filename (&optional arg)
+  "Copy file name(s) (without directory) into the kill ring."
+  (interactive "P")
+  (let* ((files (dired-get-marked-files 'no-dir))
+         (string (mapconcat #'identity files " ")))
+    (unless (string= string "")
+      (kill-new string)
+      (message "%s" string))))
+
 ;; --- Ranger/vterm fix (delete this block to disable) ---
 ;; When in vterm, switch to another window before opening ranger
 ;; When quitting ranger, return to the vterm window
