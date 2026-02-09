@@ -200,6 +200,7 @@
 (global-set-key (kbd "C-c r") (lambda () (interactive) (revert-buffer t t)))  ; Revert without prompts
 (global-set-key (kbd "M-k") 'kill-current-buffer)
 (global-set-key (kbd "M-o") 'next-multiframe-window)
+(global-set-key (kbd "M-O") 'previous-multiframe-window)
 
 ;; Freeze/unfreeze window layout — prevents windows from being deleted
 ;; Buffer switching and resizing still work normally when frozen.
