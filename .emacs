@@ -62,7 +62,14 @@
 ;; Tab move keybindings (M-{ M-} works in both GUI and terminal)
 (global-set-key (kbd "M-{") #'tab-bar-move-tab-backward)
 (global-set-key (kbd "M-}") (lambda () (interactive) (tab-bar-move-tab 1)))
-(global-set-key (kbd "M-N") #'tab-bar-close-tab)
+(defun my/tab-close-confirm ()
+  "Close current tab with y/n confirmation."
+  (interactive)
+  (when (y-or-n-p "Delete tab? ")
+    (tab-bar-close-tab)))
+
+(global-set-key (kbd "M-N") #'my/tab-close-confirm)
+(global-set-key (kbd "M-r") #'tab-bar-rename-tab)
 
 ;; Helm
 (require 'helm)
@@ -77,7 +84,6 @@
 
 ;; Expand-region - incrementally expand selection
 (require 'expand-region)
-(global-set-key (kbd "M-r") 'er/expand-region)
 
 ;; Projectile
 (require 'projectile)
@@ -198,7 +204,8 @@
 ;; Window resizing (vim-style: h/l horizontal, i/m vertical)
 (global-set-key (kbd "M-i") (lambda () (interactive) (enlarge-window 2)))          ; up
 (global-set-key (kbd "M-m") (lambda () (interactive) (shrink-window 2)))           ; down
-(global-set-key (kbd "M-h") (lambda () (interactive) (shrink-window-horizontally 2)))  ; left
+(global-set-key (kbd "M-h") (lambda () (interactive) (enlarge-window-horizontally 2)))  ; enlarge horizontal
+(global-set-key (kbd "M-H") (lambda () (interactive) (shrink-window-horizontally 2)))  ; shrink horizontal
 ;; M-l reserved for org-mode promote/demote
 (global-set-key (kbd "M-0") 'delete-window)
 (global-set-key (kbd "M-1") 'delete-other-windows)
@@ -240,6 +247,9 @@
 (define-key org-mode-map (kbd "C-c '") 'claude-code-ide-menu)
 (define-key org-mode-map (kbd "C-c C-'") 'claude-code-ide-menu)
 
+;; NOTE: C-RET is set to "Ignore" in iTerm2 (Settings > Profiles > Keys > Key Mappings)
+;; Without this, terminal sends garbage escape sequence that triggers random keybindings.
+
 ;; Terminal-friendly subtree/item movement (M-S-<up>/<down> don't work in terminal)
 ;; Smart functions that work on both headings (*) and list items (-)
 (defun my/org-move-up ()
@@ -258,6 +268,7 @@
 
 (define-key org-mode-map (kbd "M-p") 'my/org-move-up)
 (define-key org-mode-map (kbd "M-P") 'my/org-move-down)
+(define-key org-mode-map (kbd "M-h") nil)  ; let global window resize work
 (define-key org-mode-map (kbd "M-l") 'org-promote-subtree)
 (define-key org-mode-map (kbd "M-L") 'org-demote-subtree)
 
@@ -303,18 +314,23 @@ Preserves checkbox if current item has one."
     (message "Word wrap (good for prose)")))
 (global-set-key (kbd "C-c w") 'my/toggle-wrap)
 
-;; Open org links in new tab
-(defun my/org-open-at-point-in-new-tab ()
-  "Open org link at point in a new tab."
+;; Open org links: file links in new tab, web links in browser normally
+(defun my/org-open-at-point-smart ()
+  "Open file links in a new tab, web links in browser normally."
   (interactive)
-  (let ((link (org-element-context)))
-    (when (eq (org-element-type link) 'link)
-      (let ((path (org-element-property :path link)))
-        (tab-bar-new-tab)
-        (org-open-at-point)
-        (delete-other-windows)))))
+  (let* ((context (org-element-context))
+         (type (org-element-property :type context)))
+    (if (and (eq (org-element-type context) 'link)
+             (member type '("file" "id")))
+        (progn
+          (org-open-at-point)
+          (let ((buf (current-buffer)))
+            (tab-bar-new-tab)
+            (switch-to-buffer buf)
+            (delete-other-windows)))
+      (org-open-at-point))))
 
-(define-key org-mode-map (kbd "C-c C-o") #'my/org-open-at-point-in-new-tab)
+(define-key org-mode-map (kbd "C-c C-o") #'my/org-open-at-point-smart)
 (setq org-footnote-define-inline +1)
 (setq org-startup-indented t)
 (add-hook 'org-babel-after-execute-hook 'org-redisplay-inline-images)
@@ -322,7 +338,8 @@ Preserves checkbox if current item has one."
 ;; Org TODO keywords
 (setq org-todo-keywords
       '((sequence "TODO(t)" "NEXT(n)" "IN-PROGRESS(i)" "WAITING(w)" "MEETING-SCHEDULED(m)" "RECIPES(r)" "NOTES(o)" "|" "DONE(d)" "MEETING-DONE(D)" "CANCELED(c)" "JOURNAL(j)")
-        (sequence "TRAVEL(T)" "|")))
+        (sequence "TRAVEL(T)" "|")
+        (sequence "EVENT(E)" "|")))
 
 (setq org-todo-keyword-faces
       '(("TODO" . "red")
@@ -336,7 +353,8 @@ Preserves checkbox if current item has one."
         ("RECIPES" . "seashell1")
         ("MEETING-DONE" . "DeepSkyBlue")
         ("JOURNAL" . "OliveDrab")
-        ("TRAVEL" . "cyan")))
+        ("TRAVEL" . "cyan")
+        ("EVENT" . "cyan")))
 
 (setq-default org-display-custom-times t)
 (setq org-time-stamp-custom-formats '("<%a %b %e %Y>" . "<%a %b %e %Y %H:%M>"))
