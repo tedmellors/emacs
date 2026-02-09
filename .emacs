@@ -201,6 +201,30 @@
 (global-set-key (kbd "M-k") 'kill-current-buffer)
 (global-set-key (kbd "M-o") 'next-multiframe-window)
 
+;; Freeze/unfreeze window layout — prevents windows from being deleted
+;; Buffer switching and resizing still work normally when frozen.
+(defvar my/windows-frozen nil "Whether the current window layout is frozen.")
+
+(defun my/toggle-freeze-windows ()
+  "Toggle frozen state for window layout."
+  (interactive)
+  (setq my/windows-frozen (not my/windows-frozen))
+  (unless my/windows-frozen
+    (dolist (win (window-list))
+      (set-window-dedicated-p win nil)))
+  (message (if my/windows-frozen "Windows frozen" "Windows unfrozen")))
+
+(defun my/prevent-window-delete (orig-fun &rest args)
+  "Block window deletion when frozen."
+  (if my/windows-frozen
+      (message "Windows are frozen! C-c f to unfreeze.")
+    (apply orig-fun args)))
+
+(advice-add 'delete-window :around #'my/prevent-window-delete)
+(advice-add 'delete-other-windows :around #'my/prevent-window-delete)
+
+(global-set-key (kbd "C-c f") #'my/toggle-freeze-windows)
+
 ;; Window resizing (vim-style: h/l horizontal, i/m vertical)
 (global-set-key (kbd "M-i") (lambda () (interactive) (enlarge-window 2)))          ; up
 (global-set-key (kbd "M-m") (lambda () (interactive) (shrink-window 2)))           ; down
