@@ -54,8 +54,9 @@
 (defun my/tab-new-and-rename ()
   "Create a new tab, then immediately rename it."
   (interactive)
-  (tab-bar-new-tab)
-  (call-interactively #'tab-bar-rename-tab))
+  (when (y-or-n-p "New tab? ")
+    (tab-bar-new-tab)
+    (call-interactively #'tab-bar-rename-tab)))
 
 (global-set-key (kbd "M-n") #'my/tab-new-and-rename)
 
@@ -162,8 +163,17 @@
   (when (and my/ranger-return-window (window-live-p my/ranger-return-window))
     (select-window my/ranger-return-window)
     (setq my/ranger-return-window nil)))
-(advice-add 'ranger :before (lambda (&rest _) (my/ranger-escape-vterm)))
-(advice-add 'ranger-close :after (lambda (&rest _) (my/ranger-return-to-vterm)))
+(defvar my/freeze-before-ranger nil "Whether windows were frozen before ranger opened.")
+(advice-add 'ranger :before (lambda (&rest _)
+                              (my/ranger-escape-vterm)
+                              (when my/windows-frozen
+                                (setq my/freeze-before-ranger t)
+                                (setq my/windows-frozen nil))))
+(advice-add 'ranger-close :after (lambda (&rest _)
+                                   (my/ranger-return-to-vterm)
+                                   (when my/freeze-before-ranger
+                                     (setq my/windows-frozen t)
+                                     (setq my/freeze-before-ranger nil))))
 ;; --- End ranger/vterm fix ---
 
 ;; Global settings
