@@ -24,6 +24,8 @@
 (setq ring-bell-function 'ignore)
 (setq inhibit-startup-screen t)
 (defalias 'yes-or-no-p 'y-or-n-p)
+(global-unset-key (kbd "C-z"))           ; prevent accidental suspend
+(global-unset-key (kbd "C-x C-z"))       ; prevent accidental suspend
 
 ;; UI - shared settings
 (menu-bar-mode -1)
@@ -246,6 +248,8 @@
 (global-set-key (kbd "M-1") 'delete-other-windows)
 (global-set-key (kbd "M-2") 'split-window-below)
 (global-set-key (kbd "M-3") 'split-window-right)
+(global-set-key (kbd "M-j") 'scroll-up-line)     ; scroll view down
+(global-set-key (kbd "M-J") 'scroll-down-line)   ; scroll view up
 (global-set-key (kbd "C-h") 'helm-show-kill-ring)
 (global-set-key [C-wheel-up] 'text-scale-increase)
 (global-set-key [C-wheel-down] 'text-scale-decrease)
@@ -282,8 +286,8 @@
 (define-key org-mode-map (kbd "C-c '") 'claude-code-ide-menu)
 (define-key org-mode-map (kbd "C-c C-'") 'claude-code-ide-menu)
 
-;; NOTE: C-RET is set to "Ignore" in iTerm2 (Settings > Profiles > Keys > Key Mappings)
-;; Without this, terminal sends garbage escape sequence that triggers random keybindings.
+;; NOTE: C-RET and M-S-RET are set to "Ignore" in iTerm2 (Settings > Profiles > Keys > Key Mappings)
+;; Without this, terminal sends garbage escape sequences that trigger random keybindings.
 
 ;; Terminal-friendly subtree/item movement (M-S-<up>/<down> don't work in terminal)
 ;; Smart functions that work on both headings (*) and list items (-)
