@@ -288,6 +288,10 @@
 
 ;; NOTE: C-RET and M-S-RET are set to "Ignore" in iTerm2 (Settings > Profiles > Keys > Key Mappings)
 ;; Without this, terminal sends garbage escape sequences that trigger random keybindings.
+;;
+;; NOTE: If "OI" is printed when switching focus to/from iTerm2, disable focus reporting:
+;;   defaults write com.googlecode.iterm2 FocusReportingEnabled -bool false
+;; Then fully quit (Cmd+Q) and relaunch iTerm2.
 
 ;; Terminal-friendly subtree/item movement (M-S-<up>/<down> don't work in terminal)
 ;; Smart functions that work on both headings (*) and list items (-)
@@ -361,12 +365,11 @@ Preserves checkbox if current item has one."
          (type (org-element-property :type context)))
     (if (and (eq (org-element-type context) 'link)
              (member type '("file" "id")))
-        (progn
-          (org-open-at-point)
-          (let ((buf (current-buffer)))
-            (tab-bar-new-tab)
-            (switch-to-buffer buf)
-            (delete-other-windows)))
+        (let ((path (org-element-property :path context))
+              (my/windows-frozen nil))
+          (tab-bar-new-tab)
+          (delete-other-windows)
+          (find-file path))
       (org-open-at-point))))
 
 (define-key org-mode-map (kbd "C-c C-o") #'my/org-open-at-point-smart)
@@ -466,6 +469,78 @@ Preserves checkbox if current item has one."
 
 ;; Keybinding for org-agenda
 (global-set-key (kbd "C-c a") 'org-agenda)
+
+;; Sync NEXT tasks from downstream task files into MASTER_TASKS.org
+(defun my/extract-active-tasks-from-file (file-path)
+  "Extract NEXT, WAITING, and MEETING-SCHEDULED headings from FILE-PATH.
+Returns a list of (STATE . TEXT) cons cells."
+  (when (file-exists-p file-path)
+    (let (tasks)
+      (with-temp-buffer
+        (insert-file-contents file-path)
+        (goto-char (point-min))
+        (let ((case-fold-search nil))
+          (while (re-search-forward
+                  "^\\*+ \\(NEXT\\|IN-PROGRESS\\|WAITING\\|MEETING-SCHEDULED\\) \\(.+\\)$" nil t)
+            (push (cons (match-string 1) (match-string 2)) tasks))))
+      (nreverse tasks))))
+
+(defun my/sync-next-tasks ()
+  "Sync NEXT tasks from downstream task files into the current buffer.
+Scans for headings with a :TASK_FILE: property. Deletes any existing
+child headings tagged :SYNCED:, then inserts fresh NEXT tasks from
+the linked file as child headings tagged :SYNCED:."
+  (interactive)
+  (save-excursion
+    (let (entries)
+      ;; Collect (heading-pos . file-path) pairs via :TASK_FILE: property
+      (org-map-entries
+       (lambda ()
+         (let ((task-file (org-entry-get nil "TASK_FILE")))
+           (when task-file
+             (push (cons (point) task-file) entries)))))
+      ;; Process in reverse so deletions/insertions don't shift positions
+      (dolist (entry entries)
+        (let* ((pos (car entry))
+               (file-path (cdr entry))
+               (tasks (if (file-exists-p file-path)
+                          (my/extract-active-tasks-from-file file-path)
+                        nil))
+               (file-missing (not (file-exists-p file-path)))
+               (child-stars (save-excursion
+                              (goto-char pos)
+                              (make-string (1+ (org-current-level)) ?*))))
+          (when file-missing
+            (message "Warning: Task file not found: %s" file-path))
+          ;; Delete existing :SYNCED: children (in reverse to preserve positions)
+          (let (synced-positions)
+            (save-excursion
+              (goto-char pos)
+              (let ((subtree-end (save-excursion (org-end-of-subtree t) (point))))
+                (org-map-entries
+                 (lambda ()
+                   (when (member "SYNCED" (org-get-tags nil t))
+                     (push (point) synced-positions)))
+                 nil 'tree)))
+            (dolist (spos synced-positions)
+              (save-excursion
+                (goto-char spos)
+                (let ((start (line-beginning-position))
+                      (end (save-excursion (org-end-of-subtree t) (point))))
+                  (delete-region start (min (1+ end) (point-max)))))))
+          ;; Insert new synced headings after the property drawer
+          (goto-char pos)
+          (org-end-of-meta-data t)
+          (let ((insert-point (point)))
+            (goto-char insert-point)
+            (when (and (not file-missing) tasks)
+              (dolist (task tasks)
+                (insert (format "%s %s %s :SYNCED:\n"
+                                child-stars (car task) (cdr task))))))))))
+  (message "NEXT tasks synced."))
+
+(with-eval-after-load 'org
+  (define-key org-mode-map (kbd "C-c s") #'my/sync-next-tasks))
 
 ;; ============================================================================
 
