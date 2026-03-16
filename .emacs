@@ -292,6 +292,12 @@
 ;; NOTE: If "OI" is printed when switching focus to/from iTerm2, disable focus reporting:
 ;;   defaults write com.googlecode.iterm2 FocusReportingEnabled -bool false
 ;; Then fully quit (Cmd+Q) and relaunch iTerm2.
+;;
+;; NOTE: If pasting from outside iTerm2 wraps text with garbage characters (200~ ... 201~),
+;; disable bracketed paste: Settings > Profiles > Terminal > uncheck "Allow Paste Bracketing"
+;;
+;; NOTE: In iTerm2, enable "Smart cursor color" (Settings > Profiles > Colors)
+;; for context-aware cursor color that contrasts with background.
 
 ;; Terminal-friendly subtree/item movement (M-S-<up>/<down> don't work in terminal)
 ;; Smart functions that work on both headings (*) and list items (-)
