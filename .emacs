@@ -681,6 +681,7 @@ the linked file as child headings tagged :SYNCED:."
   (define-key vterm-mode-map (kbd "M-n") nil))
 
 ;; claude-code-ide
+;; Install: cd ~/.emacs.d/site-lisp && git clone https://github.com/manzaltu/claude-code-ide.el claude-code-ide
 (add-to-list 'load-path (expand-file-name "site-lisp/claude-code-ide" user-emacs-directory))
 (require 'claude-code-ide)
 (setq claude-code-ide-terminal-backend 'vterm)
