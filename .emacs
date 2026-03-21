@@ -296,6 +296,9 @@
 ;; NOTE: If pasting from outside iTerm2 wraps text with garbage characters (200~ ... 201~),
 ;; disable bracketed paste: Settings > Profiles > Terminal > uncheck "Allow Paste Bracketing"
 ;;
+;; NOTE: Cmd+W is set to "Ignore" in iTerm2 (Settings > Profiles > Keys > Key Mappings)
+;; Prevents accidentally closing the terminal. Use Cmd+Shift+W or the tab X button instead.
+;;
 ;; NOTE: In iTerm2, enable "Smart cursor color" (Settings > Profiles > Colors)
 ;; for context-aware cursor color that contrasts with background.
 
