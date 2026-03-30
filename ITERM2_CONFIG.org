@@ -1,0 +1,21 @@
+#+TITLE: iTerm2 Configuration
+#+AUTHOR: Emacs Config
+#+STARTUP: overview
+#+OPTIONS: toc:nil
+
+* Overview
+These settings must be configured in iTerm2 preferences directly — they cannot be set from Emacs.
+They are required for Emacs (especially vterm, shell, and org-mode) to work correctly in iTerm2.
+
+* Settings → Profiles → Terminal
+** Scrollback Lines: 0
+- Set to 0 (or uncheck "Unlimited scrollback")
+- Unlimited scrollback causes performance issues with vterm/shell in Emacs
+** UNCHECK "Save lines to scrollback in alternate screen mode"
+- Prevents vterm/less/man from dumping output into the scrollback buffer
+- Without this, switching between Emacs buffers and shell can leave stale output in scrollback
+
+* Important Notes
+- iTerm2 may need a *full restart* after changing these settings for them to take effect
+- Make sure you are editing the correct profile (the one with the star = default)
+- Changes do not apply to already-open sessions — open a new tab/window after restarting

@@ -2,42 +2,41 @@
 
 Personal Emacs configuration with all packages included.
 
-## Setup on a New Machine
+## Setup on a New Machine (Local)
 
-### 1. Install dependencies
+### 1. Install Emacs and dependencies
 
-**macOS (Homebrew):**
 ```bash
-brew install cmake libtool
+brew install emacs cmake libtool
 ```
 
-**Ubuntu/Debian:**
+### 2. Back up any existing config
+
 ```bash
-sudo apt install cmake libtool-bin
+mv ~/.emacs ~/.emacs.bak 2>/dev/null
+mv ~/.emacs.d ~/.emacs.d.bak 2>/dev/null
 ```
 
-**Fedora:**
-```bash
-sudo dnf install cmake libtool
-```
-
-### 2. Clone and symlink
+### 3. Clone and symlink
 
 ```bash
 git clone https://github.com/tedmellors/emacs.git ~/emacs
-ln -s ~/emacs/.emacs ~/.emacs
-ln -s ~/emacs/.emacs.d ~/.emacs.d
+ln -sf ~/emacs/.emacs ~/.emacs
+ln -sf ~/emacs/.emacs.d ~/.emacs.d
 ```
 
-### 3. Clone dependencies
+### 4. Clone dependencies
 
 ```bash
-git clone https://github.com/tedmellors/specflow.git ~/emacs/.emacs.d/specflow
-git clone https://github.com/manzaltu/claude-code-ide.el ~/emacs/.emacs.d/site-lisp/claude-code-ide
-git clone https://github.com/lizqwerscott/mcp.el ~/emacs/.emacs.d/site-lisp/mcp
+mkdir -p ~/.emacs.d/site-lisp
+cd ~/.emacs.d/site-lisp
+git clone https://github.com/manzaltu/claude-code-ide.el claude-code-ide
+git clone https://github.com/lizqwerscott/mcp.el mcp
+cd ~/.emacs.d
+git clone https://github.com/tedmellors/specflow.git specflow
 ```
 
-### 4. Launch Emacs
+### 5. Launch Emacs
 
 **GUI:**
 ```bash
@@ -50,23 +49,87 @@ tmux new -s emacs
 emacs -nw
 ```
 
-Use `-nw` (no window) to run Emacs in terminal mode inside tmux.
+On first launch, packages (helm, ranger, gptel, vterm, etc.) will auto-install from MELPA. vterm will compile its native module (requires cmake/libtool).
 
-On first launch:
-- Packages (helm, ranger, gptel, vterm) will auto-install from MELPA
-- vterm will compile its native module (requires cmake/libtool)
+## Setup on a Remote Machine (SSH)
+
+For running terminal Emacs on a remote server (e.g., Mac Mini via SSH).
+
+### 1. SSH into the remote machine
+
+```bash
+ssh user@hostname
+```
+
+### 2. Install Emacs and dependencies
+
+```bash
+brew install emacs cmake libtool
+```
+
+### 3. Back up any existing config
+
+```bash
+mv ~/.emacs ~/.emacs.bak 2>/dev/null
+mv ~/.emacs.d ~/.emacs.d.bak 2>/dev/null
+```
+
+### 4. Clone and symlink
+
+```bash
+git clone https://github.com/tedmellors/emacs.git ~/emacs
+ln -sf ~/emacs/.emacs ~/.emacs
+ln -sf ~/emacs/.emacs.d ~/.emacs.d
+```
+
+### 5. Clone dependencies
+
+```bash
+mkdir -p ~/.emacs.d/site-lisp
+cd ~/.emacs.d/site-lisp
+git clone https://github.com/manzaltu/claude-code-ide.el claude-code-ide
+git clone https://github.com/lizqwerscott/mcp.el mcp
+cd ~/.emacs.d
+git clone https://github.com/tedmellors/specflow.git specflow
+```
+
+### 6. Fix terminal colors for SSH
+
+Add these to `~/.zshrc` on the **remote** machine:
+
+```bash
+echo 'export TERM=xterm-256color' >> ~/.zshrc
+echo 'export COLORTERM=truecolor' >> ~/.zshrc
+```
+
+Then **disconnect and reconnect** via SSH for the changes to take effect. `source ~/.zshrc` alone is not sufficient — a full SSH reconnect is required.
+
+### 7. Launch Emacs
+
+```bash
+emacs
+```
+
+Packages will auto-install on first launch. If you get errors about missing packages, run `M-x package-refresh-contents` inside Emacs and restart.
 
 ## iTerm2 Settings (for terminal Emacs)
 
-If using iTerm2 and you see "OI" printed when switching focus, disable focus reporting:
+See [ITERM2_CONFIG.org](ITERM2_CONFIG.org) for full details.
+
+**Required settings (iTerm2 → Settings → Profiles → Terminal):**
+- Scrollback Lines: **0**
+- **UNCHECK** "Save lines to scrollback in alternate screen mode"
+- iTerm2 may need a **full restart** after changing these settings
+
+**C-RET and M-S-RET**: Set to "Ignore" in iTerm2 (Settings → Profiles → Keys → Key Mappings) to prevent garbage escape sequences in terminal Emacs.
+
+**Focus Reporting**: If you see "OI" printed when switching focus, disable it:
 
 ```bash
 defaults write com.googlecode.iterm2 FocusReportingEnabled -bool false
 ```
 
 Then restart iTerm2.
-
-Or manually: iTerm2 → Settings → Advanced → search "Focus Reporting" → set to No.
 
 ## Keybindings
 
