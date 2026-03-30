@@ -1,0 +1,77 @@
+#+TITLE: Emacs — Configuration & Tooling Tasks
+#+AUTHOR: TRM LLC
+#+STARTUP: overview
+#+OPTIONS: toc:nil
+
+* Status
+- Config location: /Users/tedmellors/emacs/.emacs (symlinked)
+- Emacs version: 30
+- Key packages: helm, ranger, gptel, vterm, projectile, magit, calfw, org-gcal
+- Last Updated: 2026-03-30
+
+* Active
+** NEXT Fix org-mode M-RET list/bullet extension behavior
+- M-RET (org-meta-return) sometimes doesn't extend lists properly under certain circumstances
+- Need to reproduce the exact behavior first before investigating
+- [ ] Reproduce: identify which list types / contexts trigger the wrong behavior
+- [ ] Document: plain list vs checkbox vs heading, nested vs top-level, etc.
+- [ ] Investigate: check if org-mode version, config, or a package is interfering
+
+** TODO Set up calfw + org-gcal for visual calendar with Google Calendar sync
+- Visual calendar in Emacs (calfw) with two-way Google Calendar sync (org-gcal)
+- Events sync into =00_Admin/05_Calendar/CALENDAR.org= in the TRM repo
+- =C-c c= opens the visual calendar. Auto-fetches when opening org-agenda.
+*** TODO Create Google Cloud project and OAuth credentials
+1. Go to https://console.cloud.google.com/
+2. Create a new project (e.g. "Emacs Calendar")
+3. Enable the *Google Calendar API*
+4. Go to Credentials → Create OAuth 2.0 Client ID → Application type: *Desktop app*
+5. Copy the *Client ID* and *Client Secret*
+*** TODO Add credentials to ~/.authinfo
+Add this line (replace placeholders with real values):
+#+begin_example
+machine google-calendar login your-email@gmail.com password YOUR_CLIENT_SECRET port YOUR_CLIENT_ID
+#+end_example
+*** TODO Create calendar directory and file in TRM
+#+begin_src shell
+mkdir -p ~/Documents/Documents_Ted_Mac_air/TRM/00_Admin/05_Calendar
+#+end_src
+*** TODO Apply .emacs changes
+- Add calfw, calfw-org, org-gcal to package list
+- Add config block after Org-Agenda section
+*** TODO First run: authenticate and test
+1. Restart Emacs (or =C-c e= to reload config)
+2. Run =M-x org-gcal-fetch= — browser opens for OAuth consent
+3. Authorize, return to Emacs — events populate CALENDAR.org
+4. =C-c c= to open the visual calendar
+5. Verify events appear in =C-c a= agenda views
+
+* Complete
+** DONE Add freeze/unfreeze window layout for tabs
+CLOSED: [2026-03-30 Mon]
+- Toggle keybinding to lock/unlock current tab's windows
+- Uses set-window-dedicated-p to prevent buffer replacement
+
+** DONE Add EVENT TODO keyword to org-mode config
+CLOSED: [2026-03-30 Mon]
+
+** DONE C-c C-o opens link but also duplicates current buffer in a new tab
+CLOSED: [2026-03-30 Mon]
+- Fixed: new tab should only contain the linked file, not the originating buffer
+
+** DONE Change C-c e to always re-evaluate .emacs config from anywhere
+CLOSED: [2026-03-30 Mon]
+- C-c e always evaluates ~/.emacs regardless of current buffer
+- C-c E evals the current buffer (old behavior)
+
+** DONE Ranger yp sometimes only copies directory path instead of full file path
+CLOSED: [2026-03-30 Mon]
+- Root cause: ranger's header deletion shifts dired-subdir-alist markers
+- Fixed by overriding both functions to bypass dired-get-subdir
+
+** DONE M-{ and M-} tab reordering broken in org-mode buffers
+CLOSED: [2026-03-30 Mon]
+- Org-mode was overriding keybindings with org-backward-element / org-forward-element
+
+* Notes
+- iTerm2 configuration: [[file:/Users/tedmellors/emacs/ITERM2_CONFIG.org][ITERM2_CONFIG.org]]
