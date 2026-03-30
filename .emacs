@@ -546,7 +546,87 @@ the linked file as child headings tagged :SYNCED:."
               (dolist (task tasks)
                 (insert (format "%s %s %s :SYNCED:\n"
                                 child-stars (car task) (cdr task))))))))))
-  (message "NEXT tasks synced."))
+  ;; Now sync day-tagged tasks into THIS WEEK
+  (my/sync-this-week)
+  (message "Tasks synced."))
+
+(defvar my/day-tags '("MONDAY" "TUESDAY" "WEDNESDAY" "THURSDAY" "FRIDAY" "SATURDAY" "SUNDAY")
+  "Day tags used for THIS WEEK sync.")
+
+(defun my/extract-day-tagged-tasks-from-file (file-path)
+  "Extract tasks with day tags from FILE-PATH.
+Returns a list of (DAY STATE TEXT) lists."
+  (when (file-exists-p file-path)
+    (let (tasks)
+      (with-temp-buffer
+        (insert-file-contents file-path)
+        (goto-char (point-min))
+        (let ((case-fold-search nil))
+          (while (re-search-forward
+                  "^\\*+ \\(NEXT\\|IN-PROGRESS\\|TODO\\|WAITING\\|MEETING-SCHEDULED\\) \\(.+\\)$" nil t)
+            (let ((state (match-string 1))
+                  (text (match-string 2)))
+              (dolist (day my/day-tags)
+                (when (string-match (concat ":" day ":") text)
+                  ;; Remove the day tag from displayed text
+                  (let ((clean-text (replace-regexp-in-string
+                                     (concat " *:" day ":") "" text)))
+                    (push (list day state clean-text) tasks))))))))
+      (nreverse tasks))))
+
+(defun my/sync-this-week ()
+  "Sync day-tagged tasks into the THIS WEEK section.
+Scans all task files (via :TASK_FILE: properties) for tasks tagged with
+day names (:MONDAY:, :TUESDAY:, etc.) and inserts them under the matching
+day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
+  (save-excursion
+    ;; Collect all task file paths
+    (let (all-task-files all-day-tasks)
+      (org-map-entries
+       (lambda ()
+         (let ((task-file (org-entry-get nil "TASK_FILE")))
+           (when (and task-file (not (member task-file all-task-files)))
+             (push task-file all-task-files)))))
+      ;; Extract day-tagged tasks from all files
+      (dolist (file-path all-task-files)
+        (let ((day-tasks (my/extract-day-tagged-tasks-from-file file-path)))
+          (setq all-day-tasks (append all-day-tasks day-tasks))))
+      ;; Find the THIS WEEK heading
+      (goto-char (point-min))
+      (when (re-search-forward "^\\* THIS WEEK:?" nil t)
+        (let ((week-start (point))
+              (week-end (save-excursion (org-end-of-subtree t) (point))))
+          ;; For each day header, clear :SYNCED: items and insert day-tagged tasks
+          (dolist (day my/day-tags)
+            (goto-char week-start)
+            (let ((day-re (concat "^\\*\\* " day ":?")))
+              (when (re-search-forward day-re week-end t)
+                (let* ((day-pos (line-beginning-position))
+                       (day-end (save-excursion (org-end-of-subtree t) (point)))
+                       synced-positions)
+                  ;; Collect :SYNCED: positions under this day (in reverse)
+                  (save-excursion
+                    (goto-char day-pos)
+                    (org-map-entries
+                     (lambda ()
+                       (when (member "SYNCED" (org-get-tags nil t))
+                         (push (point) synced-positions)))
+                     nil 'tree))
+                  ;; Delete :SYNCED: entries
+                  (dolist (spos synced-positions)
+                    (save-excursion
+                      (goto-char spos)
+                      (let ((start (line-beginning-position))
+                            (end (save-excursion (org-end-of-subtree t) (point))))
+                        (delete-region start (min (1+ end) (point-max))))))
+                  ;; Insert matching day-tagged tasks after the day header
+                  (goto-char day-pos)
+                  (forward-line 1)
+                  (let ((day-tasks (seq-filter (lambda (dt) (string= (car dt) day))
+                                              all-day-tasks)))
+                    (dolist (task day-tasks)
+                      (insert (format "*** %s %s :SYNCED:\n"
+                                      (nth 1 task) (nth 2 task))))))))))))))
 
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-c s") #'my/sync-next-tasks))

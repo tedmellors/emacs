@@ -10,6 +10,22 @@
 - Last Updated: 2026-03-30
 
 * Active
+** NEXT Auto-sync timestamped tasks into THIS WEEK by date
+- Tasks with org timestamps (e.g., =<2026-03-31 Tue 17:30>=) should automatically
+  appear under the correct day in THIS WEEK without needing a manual day tag
+- Example: =*** MEETING-SCHEDULED Hingham Pizza party <2026-03-31 Tue 17:30>=
+  should auto-appear under =** TUESDAY:= without needing =:TUESDAY:= tag
+- C-c s should parse the timestamp, determine the day of the week, and sync accordingly
+- Challenge: tasks might be scheduled weeks in advance — need to only sync items
+  whose timestamp falls within the current week (Mon–Sun of the week containing today)
+- Approach ideas:
+  - During C-c s, scan all task files for MEETING-SCHEDULED or any task with a timestamp
+  - Parse the date, check if it falls in the current week
+  - If yes, determine the day of week and sync under the matching day header
+  - No manual day tag needed — the timestamp IS the source of truth
+  - Tasks with both a timestamp AND a day tag: day tag takes precedence (manual override)
+- This builds on the day-tag sync already implemented — same infrastructure, just an additional source
+
 ** NEXT Fix org-mode M-RET list/bullet extension behavior
 - M-RET (org-meta-return) sometimes doesn't extend lists properly under certain circumstances
 - Need to reproduce the exact behavior first before investigating
@@ -47,6 +63,13 @@ mkdir -p ~/Documents/Documents_Ted_Mac_air/TRM/00_Admin/05_Calendar
 5. Verify events appear in =C-c a= agenda views
 
 * Complete
+** DONE Add day-tag sync for THIS WEEK section in MASTER_TASKS.org
+CLOSED: [2026-03-30 Mon]
+- Implemented: C-c s now also scans task files for day tags (:MONDAY:, :TUESDAY:, etc.)
+- Syncs tagged tasks under matching day headers in * THIS WEEK with :SYNCED: tag
+- Manual entries preserved, only :SYNCED: items replaced on re-sync
+- Remove day tag when marking task DONE
+
 ** DONE Add freeze/unfreeze window layout for tabs
 CLOSED: [2026-03-30 Mon]
 - Toggle keybinding to lock/unlock current tab's windows
