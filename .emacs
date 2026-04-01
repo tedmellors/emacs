@@ -9,7 +9,7 @@
 (package-initialize)
 
 ;; Auto-install packages if missing
-(defvar my/packages '(helm ranger gptel vterm projectile helm-projectile flx helm-flx avy magit expand-region)
+(defvar my/packages '(helm ranger vterm projectile helm-projectile flx helm-flx avy magit expand-region)
   "Packages to ensure are installed.")
 
 (unless (seq-every-p #'package-installed-p my/packages)
@@ -633,108 +633,102 @@ day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
 
 ;; ============================================================================
 
-;; gptel (OpenAI/LLM)
-(require 'gptel)
-(require 'auth-source)
-(setq auth-sources '("~/.authinfo"))
-(setq gptel-api-key #'gptel-api-key-from-auth-source)
-(setq gptel-model 'gpt-5.2)
-(setq gptel-default-mode 'org-mode)
-(setq gptel-prompt-prefix-alist
-      '((org-mode . "* ")
-        (markdown-mode . "### ")))
-;; Remove response prefix - let system message handle formatting
-(setq gptel-response-prefix-alist '((org-mode . "** ")
-                                    (markdown-mode . "")))
-
-;; Quick model switcher (C-c m)
-(defun gptel-switch-model ()
-  "Quickly switch between preset models."
-  (interactive)
-  (let* ((models '("gpt-5.2" "gpt-4o" "gpt-4o-mini" "o1" "o1-mini" "o3-mini"))
-         (choice (completing-read "Model: " models nil t)))
-    (setq gptel-model (intern choice))
-    (message "Switched to %s" choice)))
-
-(global-set-key (kbd "C-c m") 'gptel-switch-model)
-;; Make gptel always open at bottom
-(defun my/gptel-bottom ()
-  "Open gptel buffer at bottom of frame as a sticky window."
-  (interactive)
-  (let* ((name (read-buffer "gptel buffer: " "*ChatGPT*"))
-         (buf (save-window-excursion (gptel name))))
-    (when buf
-      (delete-other-windows)
-      (split-window-below (floor (* 0.6 (window-height))))
-      (other-window 1)
-      (switch-to-buffer buf)
-      (set-window-parameter (selected-window) 'no-delete-other-windows t)
-      (local-set-key (kbd "C-x 1") 'my/toggle-side-fullscreen))))
-(global-set-key (kbd "C-c g") 'my/gptel-bottom)
-
-(defun my/toggle-side-fullscreen ()
-  "Toggle between side window and full screen for current buffer."
-  (interactive)
-  (if (= (length (window-list)) 1)
-      (my/reattach-bottom)
-    (delete-other-windows)))
-
-(defun my/reattach-bottom ()
-  "Reattach current buffer to a sticky window at the bottom."
-  (interactive)
-  (let ((buf (current-buffer)))
-    (delete-other-windows)
-    (split-window-below (floor (* 0.6 (window-height))))
-    (other-window 1)
-    (switch-to-buffer buf)
-    (set-window-parameter (selected-window) 'no-delete-other-windows t)))
-(global-set-key (kbd "C-c b") 'my/reattach-bottom)
-(global-set-key (kbd "C-c RET") 'gptel-send)
-
-;; MCP (Model Context Protocol) for gptel
-(add-to-list 'load-path (expand-file-name "site-lisp/mcp" user-emacs-directory))
-(require 'mcp)
-(require 'mcp-hub)
-
-;; Set GitHub token from .authinfo for MCP
-(let ((auth (car (auth-source-search :host "api.github.com" :require '(:secret)))))
-  (when auth
-    (let ((secret (plist-get auth :secret)))
-      (setenv "GITHUB_PERSONAL_ACCESS_TOKEN"
-              (if (functionp secret) (funcall secret) secret)))))
-
-;; MCP server configuration
-(setq mcp-hub-servers
-      '(("github" . (:command "mcp-server-github" :args ()))
-        ("filesystem" . (:command "mcp-server-filesystem"
-                         :args ("/Users/tedmellors")))))
-
-;; Connect MCP tools to gptel
-;; Wrapper to convert mcp-hub plists to gptel-tool structs
-(defun my/mcp-tools-to-gptel ()
-  "Convert MCP hub tools to gptel-tool structs."
-  (when (fboundp 'mcp-hub-get-all-tool)
-    (mapcar (lambda (tool-plist)
-              (apply #'gptel-make-tool tool-plist))
-            (mcp-hub-get-all-tool :categoryp t))))
-
-(defun my/refresh-gptel-mcp-tools ()
-  "Refresh gptel tools from MCP servers."
-  (interactive)
-  (setq gptel-tools (my/mcp-tools-to-gptel))
-  (message "Loaded %d MCP tools into gptel" (length gptel-tools)))
-
-;; Auto-load MCP tools after servers start
-(with-eval-after-load 'mcp-hub
-  (advice-add 'mcp-hub-start-all-server :after
-              (lambda (&rest _)
-                (run-with-timer 2 nil #'my/refresh-gptel-mcp-tools))))
-
-;; Start MCP servers on Emacs startup and load tools into gptel
-(add-hook 'emacs-startup-hook
-          (lambda ()
-            (run-with-timer 1 nil #'mcp-hub-start-all-server)
-            (run-with-timer 4 nil #'my/refresh-gptel-mcp-tools)))
+;; ============================================================================
+;; gptel + MCP (DISABLED — not using on work or personal machines)
+;; To re-enable, uncomment this entire section
+;; ============================================================================
+;; (require 'gptel)
+;; (require 'auth-source)
+;; (setq auth-sources '("~/.authinfo"))
+;; (setq gptel-api-key #'gptel-api-key-from-auth-source)
+;; (setq gptel-model 'gpt-5.2)
+;; (setq gptel-default-mode 'org-mode)
+;; (setq gptel-prompt-prefix-alist
+;;       '((org-mode . "* ")
+;;         (markdown-mode . "### ")))
+;; (setq gptel-response-prefix-alist '((org-mode . "** ")
+;;                                     (markdown-mode . "")))
+;;
+;; (defun gptel-switch-model ()
+;;   "Quickly switch between preset models."
+;;   (interactive)
+;;   (let* ((models '("gpt-5.2" "gpt-4o" "gpt-4o-mini" "o1" "o1-mini" "o3-mini"))
+;;          (choice (completing-read "Model: " models nil t)))
+;;     (setq gptel-model (intern choice))
+;;     (message "Switched to %s" choice)))
+;;
+;; (global-set-key (kbd "C-c m") 'gptel-switch-model)
+;; (defun my/gptel-bottom ()
+;;   "Open gptel buffer at bottom of frame as a sticky window."
+;;   (interactive)
+;;   (let* ((name (read-buffer "gptel buffer: " "*ChatGPT*"))
+;;          (buf (save-window-excursion (gptel name))))
+;;     (when buf
+;;       (delete-other-windows)
+;;       (split-window-below (floor (* 0.6 (window-height))))
+;;       (other-window 1)
+;;       (switch-to-buffer buf)
+;;       (set-window-parameter (selected-window) 'no-delete-other-windows t)
+;;       (local-set-key (kbd "C-x 1") 'my/toggle-side-fullscreen))))
+;; (global-set-key (kbd "C-c g") 'my/gptel-bottom)
+;;
+;; (defun my/toggle-side-fullscreen ()
+;;   "Toggle between side window and full screen for current buffer."
+;;   (interactive)
+;;   (if (= (length (window-list)) 1)
+;;       (my/reattach-bottom)
+;;     (delete-other-windows)))
+;;
+;; (defun my/reattach-bottom ()
+;;   "Reattach current buffer to a sticky window at the bottom."
+;;   (interactive)
+;;   (let ((buf (current-buffer)))
+;;     (delete-other-windows)
+;;     (split-window-below (floor (* 0.6 (window-height))))
+;;     (other-window 1)
+;;     (switch-to-buffer buf)
+;;     (set-window-parameter (selected-window) 'no-delete-other-windows t)))
+;; (global-set-key (kbd "C-c b") 'my/reattach-bottom)
+;; (global-set-key (kbd "C-c RET") 'gptel-send)
+;;
+;; ;; MCP (Model Context Protocol) for gptel
+;; (add-to-list 'load-path (expand-file-name "site-lisp/mcp" user-emacs-directory))
+;; (require 'mcp)
+;; (require 'mcp-hub)
+;;
+;; (let ((auth (car (auth-source-search :host "api.github.com" :require '(:secret)))))
+;;   (when auth
+;;     (let ((secret (plist-get auth :secret)))
+;;       (setenv "GITHUB_PERSONAL_ACCESS_TOKEN"
+;;               (if (functionp secret) (funcall secret) secret)))))
+;;
+;; (setq mcp-hub-servers
+;;       '(("github" . (:command "mcp-server-github" :args ()))
+;;         ("filesystem" . (:command "mcp-server-filesystem"
+;;                          :args ("/Users/tedmellors")))))
+;;
+;; (defun my/mcp-tools-to-gptel ()
+;;   "Convert MCP hub tools to gptel-tool structs."
+;;   (when (fboundp 'mcp-hub-get-all-tool)
+;;     (mapcar (lambda (tool-plist)
+;;               (apply #'gptel-make-tool tool-plist))
+;;             (mcp-hub-get-all-tool :categoryp t))))
+;;
+;; (defun my/refresh-gptel-mcp-tools ()
+;;   "Refresh gptel tools from MCP servers."
+;;   (interactive)
+;;   (setq gptel-tools (my/mcp-tools-to-gptel))
+;;   (message "Loaded %d MCP tools into gptel" (length gptel-tools)))
+;;
+;; (with-eval-after-load 'mcp-hub
+;;   (advice-add 'mcp-hub-start-all-server :after
+;;               (lambda (&rest _)
+;;                 (run-with-timer 2 nil #'my/refresh-gptel-mcp-tools))))
+;;
+;; (add-hook 'emacs-startup-hook
+;;           (lambda ()
+;;             (run-with-timer 1 nil #'mcp-hub-start-all-server)
+;;             (run-with-timer 4 nil #'my/refresh-gptel-mcp-tools)))
 
 ;; claude-code-ide dependencies
 (dolist (pkg '(vterm websocket web-server))

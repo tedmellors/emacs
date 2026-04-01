@@ -10,6 +10,10 @@
 - Last Updated: 2026-03-30
 
 * Active
+** NEXT Comment out gptel MCP config and commit/push changes :WEDNESDAY:
+- Comment out any gptel MCP-related code in .emacs
+- Commit and push so AbbVie/Cigna machines can pull clean config
+
 ** NEXT Auto-sync timestamped tasks into THIS WEEK by date
 - Tasks with org timestamps (e.g., =<2026-03-31 Tue 17:30>=) should automatically
   appear under the correct day in THIS WEEK without needing a manual day tag
