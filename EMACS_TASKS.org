@@ -30,6 +30,28 @@
   - Tasks with both a timestamp AND a day tag: day tag takes precedence (manual override)
 - This builds on the day-tag sync already implemented — same infrastructure, just an additional source
 
+** NEXT Set up private config file for personal-only Emacs packages
+- Add a =load= call at the end of =.emacs= that loads a second
+  config file (e.g., =~/.emacs-private.el=) if it exists, using
+  =(load "~/.emacs-private" t)= — the =t= silently skips if the
+  file is missing
+- Move gptel config, Gnus/Mailroom config, API keys, and any
+  other personal-only settings into this file
+- Keep this file out of the shared emacs repo (add to .gitignore
+  or store in a separate private repo)
+- Work machines (AbbVie, Cigna) won't have the file → those
+  packages simply don't load
+- Eliminates the need to manually comment out gptel on work machines
+
+** NEXT Configure EWW as default Emacs browser
+- Set =browse-url-browser-function= to =eww-browse-url= so links
+  from org files and Gnus open in EWW instead of external browser
+- Configure DuckDuckGo as search engine (=eww-search-prefix=)
+- Set up =&= fallback to open current page in system browser
+  when EWW can't handle it
+- Install =org-eww= for capturing web content as org links
+- Test: open a link from an org file → opens in EWW buffer
+
 ** NEXT Fix org-mode M-RET list/bullet extension behavior
 - M-RET (org-meta-return) sometimes doesn't extend lists properly under certain circumstances
 - Need to reproduce the exact behavior first before investigating
