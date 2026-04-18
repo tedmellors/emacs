@@ -23,6 +23,7 @@ mv ~/.emacs.d ~/.emacs.d.bak 2>/dev/null
 git clone https://github.com/tedmellors/emacs.git ~/emacs
 ln -sf ~/emacs/.emacs ~/.emacs
 ln -sf ~/emacs/.emacs.d ~/.emacs.d
+ln -sf ~/emacs/.tmux.conf ~/.tmux.conf
 ```
 
 ### 4. Clone dependencies
@@ -80,6 +81,7 @@ mv ~/.emacs.d ~/.emacs.d.bak 2>/dev/null
 git clone https://github.com/tedmellors/emacs.git ~/emacs
 ln -sf ~/emacs/.emacs ~/.emacs
 ln -sf ~/emacs/.emacs.d ~/.emacs.d
+ln -sf ~/emacs/.tmux.conf ~/.tmux.conf
 ```
 
 ### 5. Clone dependencies
@@ -111,6 +113,21 @@ emacs
 ```
 
 Packages will auto-install on first launch. If you get errors about missing packages, run `M-x package-refresh-contents` inside Emacs and restart.
+
+## tmux
+
+Prefix is remapped from `C-b` to `C-z` so `C-b` (`backward-char`) reaches Emacs. `C-z` is unbound in Emacs, so passing it through is harmless.
+
+Common commands after the prefix change:
+
+| Key       | Action                  |
+|-----------|-------------------------|
+| C-z d     | Detach session          |
+| C-z c     | Create window           |
+| C-z 0/1/2 | Switch to window N      |
+| C-z :     | Command prompt          |
+
+To reload the config in a running tmux session without restart: `C-z :` then type `source-file ~/.tmux.conf`.
 
 ## iTerm2 Settings (for terminal Emacs)
 
