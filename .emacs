@@ -494,6 +494,22 @@ Returns a list of (STATE . TEXT) cons cells."
             (push (cons (match-string 1) (match-string 2)) tasks))))
       (nreverse tasks))))
 
+(defun my/format-synced-suffix (text)
+  "Split trailing day tags off TEXT.
+Returns (CLEAN-TEXT . SUFFIX) where SUFFIX combines any day tags
+with SYNCED into a single org tag block (e.g. \":FRIDAY:SYNCED:\"),
+or just \":SYNCED:\" if no day tag. Day tags are dropped from TEXT."
+  (let ((days '())
+        (clean text))
+    (dolist (day my/day-tags)
+      (when (string-match (concat " *:" day ":") clean)
+        (push day days)
+        (setq clean (replace-regexp-in-string (concat " *:" day ":") "" clean))))
+    (cons clean
+          (if days
+              (concat ":" (mapconcat 'identity (nreverse days) ":") ":SYNCED:")
+            ":SYNCED:"))))
+
 (defun my/sync-next-tasks ()
   "Sync NEXT tasks from downstream task files into the current buffer.
 Scans for headings with a :TASK_FILE: property. Deletes any existing
@@ -544,8 +560,10 @@ the linked file as child headings tagged :SYNCED:."
             (goto-char insert-point)
             (when (and (not file-missing) tasks)
               (dolist (task tasks)
-                (insert (format "%s %s %s :SYNCED:\n"
-                                child-stars (car task) (cdr task))))))))))
+                (let ((parts (my/format-synced-suffix (cdr task))))
+                  (insert (format "%s %s %s %s\n"
+                                  child-stars (car task)
+                                  (car parts) (cdr parts)))))))))))
   ;; Now sync day-tagged tasks into THIS WEEK
   (my/sync-this-week)
   (message "Tasks synced."))
@@ -625,8 +643,9 @@ day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
                   (let ((day-tasks (seq-filter (lambda (dt) (string= (car dt) day))
                                               all-day-tasks)))
                     (dolist (task day-tasks)
-                      (insert (format "*** %s %s :SYNCED:\n"
-                                      (nth 1 task) (nth 2 task))))))))))))))
+                      (insert (format "*** %s %s :%s:SYNCED:\n"
+                                      (nth 1 task) (nth 2 task)
+                                      (nth 0 task))))))))))))))
 
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-c s") #'my/sync-next-tasks))
