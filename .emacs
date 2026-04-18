@@ -591,6 +591,12 @@ the linked file as child headings tagged :SYNCED:."
                         (insert "\n"))))))))))))
   ;; Now sync day-tagged tasks into THIS WEEK
   (my/sync-this-week)
+  ;; Fold all :SYNCED: subtrees after sync
+  (save-excursion
+    (org-map-entries
+     (lambda ()
+       (when (member "SYNCED" (org-get-tags nil t))
+         (org-fold-hide-subtree)))))
   (message "Tasks synced."))
 
 (defvar my/day-tags '("MONDAY" "TUESDAY" "WEDNESDAY" "THURSDAY" "FRIDAY" "SATURDAY" "SUNDAY")
