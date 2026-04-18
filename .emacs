@@ -571,11 +571,13 @@ the linked file as child headings tagged :SYNCED:."
 (defvar my/day-tags '("MONDAY" "TUESDAY" "WEDNESDAY" "THURSDAY" "FRIDAY" "SATURDAY" "SUNDAY")
   "Day tags used for THIS WEEK sync.")
 
-(defun my/extract-day-tagged-tasks-from-file (file-path)
+(defun my/extract-day-tagged-tasks-from-file (file-path &optional prefix)
   "Extract tasks with day tags from FILE-PATH.
-Returns a list of (DAY STATE TEXT) lists."
+Returns a list of (DAY STATE TEXT) lists. If PREFIX is non-nil,
+it is prepended to each TEXT value."
   (when (file-exists-p file-path)
-    (let (tasks)
+    (let ((prefix (or prefix ""))
+          tasks)
       (with-temp-buffer
         (insert-file-contents file-path)
         (goto-char (point-min))
@@ -586,10 +588,13 @@ Returns a list of (DAY STATE TEXT) lists."
                   (text (match-string 2)))
               (dolist (day my/day-tags)
                 (when (string-match (concat ":" day ":") text)
-                  ;; Remove the day tag from displayed text
-                  (let ((clean-text (replace-regexp-in-string
-                                     (concat " *:" day ":") "" text)))
-                    (push (list day state clean-text) tasks))))))))
+                  (let* ((clean-text (replace-regexp-in-string
+                                      (concat " *:" day ":") "" text))
+                         (trimmed-prefix (string-trim prefix))
+                         (final-text (if (string-empty-p trimmed-prefix)
+                                         clean-text
+                                       (concat trimmed-prefix " " clean-text))))
+                    (push (list day state final-text) tasks))))))))
       (nreverse tasks))))
 
 (defun my/sync-this-week ()
@@ -598,16 +603,18 @@ Scans all task files (via :TASK_FILE: properties) for tasks tagged with
 day names (:MONDAY:, :TUESDAY:, etc.) and inserts them under the matching
 day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
   (save-excursion
-    ;; Collect all task file paths
+    ;; Collect all (task-file . prefix) pairs
     (let (all-task-files all-day-tasks)
       (org-map-entries
        (lambda ()
-         (let ((task-file (org-entry-get nil "TASK_FILE")))
-           (when (and task-file (not (member task-file all-task-files)))
-             (push task-file all-task-files)))))
+         (let ((task-file (org-entry-get nil "TASK_FILE"))
+               (prefix (org-entry-get nil "PREFIX")))
+           (when (and task-file (not (assoc task-file all-task-files)))
+             (push (cons task-file prefix) all-task-files)))))
       ;; Extract day-tagged tasks from all files
-      (dolist (file-path all-task-files)
-        (let ((day-tasks (my/extract-day-tagged-tasks-from-file file-path)))
+      (dolist (entry all-task-files)
+        (let ((day-tasks (my/extract-day-tagged-tasks-from-file
+                          (car entry) (cdr entry))))
           (setq all-day-tasks (append all-day-tasks day-tasks))))
       ;; Find the THIS WEEK heading
       (goto-char (point-min))
