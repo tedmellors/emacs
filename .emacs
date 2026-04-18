@@ -480,9 +480,23 @@ Preserves checkbox if current item has one."
 (global-set-key (kbd "C-c a") 'org-agenda)
 
 ;; Sync NEXT tasks from downstream task files into MASTER_TASKS.org
-(defun my/extract-active-tasks-from-file (file-path)
+(defun my/extract-body-at-heading ()
+  "Extract body content from current heading to the next heading.
+Point is assumed to be on the task heading line just matched. Returns
+the body as a string (trimmed on the right), or \"\" if no body."
+  (save-excursion
+    (forward-line 1)
+    (let ((body-start (point))
+          (body-end (if (re-search-forward "^\\*+ " nil t)
+                        (match-beginning 0)
+                      (point-max))))
+      (string-trim-right
+       (buffer-substring-no-properties body-start body-end)))))
+
+(defun my/extract-active-tasks-from-file (file-path &optional include-body)
   "Extract NEXT, WAITING, and MEETING-SCHEDULED headings from FILE-PATH.
-Returns a list of (STATE . TEXT) cons cells."
+Returns a list of (STATE TEXT BODY) lists. If INCLUDE-BODY is non-nil,
+BODY contains the task body; otherwise BODY is \"\"."
   (when (file-exists-p file-path)
     (let (tasks)
       (with-temp-buffer
@@ -491,7 +505,10 @@ Returns a list of (STATE . TEXT) cons cells."
         (let ((case-fold-search nil))
           (while (re-search-forward
                   "^\\*+ \\(NEXT\\|IN-PROGRESS\\|WAITING\\|MEETING-SCHEDULED\\) \\(.+\\)$" nil t)
-            (push (cons (match-string 1) (match-string 2)) tasks))))
+            (let ((state (match-string 1))
+                  (text (match-string 2))
+                  (body (if include-body (my/extract-body-at-heading) "")))
+              (push (list state text body) tasks)))))
       (nreverse tasks))))
 
 (defun my/format-synced-suffix (text)
@@ -518,18 +535,21 @@ the linked file as child headings tagged :SYNCED:."
   (interactive)
   (save-excursion
     (let (entries)
-      ;; Collect (heading-pos . file-path) pairs via :TASK_FILE: property
+      ;; Collect (pos file-path sync-body) triples via properties
       (org-map-entries
        (lambda ()
-         (let ((task-file (org-entry-get nil "TASK_FILE")))
+         (let ((task-file (org-entry-get nil "TASK_FILE"))
+               (sync-body (org-entry-get nil "SYNC_BODY")))
            (when task-file
-             (push (cons (point) task-file) entries)))))
+             (push (list (point) task-file sync-body) entries)))))
       ;; Process in reverse so deletions/insertions don't shift positions
       (dolist (entry entries)
-        (let* ((pos (car entry))
-               (file-path (cdr entry))
+        (let* ((pos (nth 0 entry))
+               (file-path (nth 1 entry))
+               (sync-body (nth 2 entry))
+               (include-body (member sync-body '("projects" "both")))
                (tasks (if (file-exists-p file-path)
-                          (my/extract-active-tasks-from-file file-path)
+                          (my/extract-active-tasks-from-file file-path include-body)
                         nil))
                (file-missing (not (file-exists-p file-path)))
                (child-stars (save-excursion
@@ -560,10 +580,15 @@ the linked file as child headings tagged :SYNCED:."
             (goto-char insert-point)
             (when (and (not file-missing) tasks)
               (dolist (task tasks)
-                (let ((parts (my/format-synced-suffix (cdr task))))
+                (let ((parts (my/format-synced-suffix (nth 1 task))))
                   (insert (format "%s %s %s %s\n"
-                                  child-stars (car task)
-                                  (car parts) (cdr parts)))))))))))
+                                  child-stars (nth 0 task)
+                                  (car parts) (cdr parts)))
+                  (let ((body (nth 2 task)))
+                    (when (and body (not (string-empty-p body)))
+                      (insert body)
+                      (unless (string-suffix-p "\n" body)
+                        (insert "\n"))))))))))))
   ;; Now sync day-tagged tasks into THIS WEEK
   (my/sync-this-week)
   (message "Tasks synced."))
@@ -571,10 +596,11 @@ the linked file as child headings tagged :SYNCED:."
 (defvar my/day-tags '("MONDAY" "TUESDAY" "WEDNESDAY" "THURSDAY" "FRIDAY" "SATURDAY" "SUNDAY")
   "Day tags used for THIS WEEK sync.")
 
-(defun my/extract-day-tagged-tasks-from-file (file-path &optional prefix)
+(defun my/extract-day-tagged-tasks-from-file (file-path &optional prefix include-body)
   "Extract tasks with day tags from FILE-PATH.
-Returns a list of (DAY STATE TEXT) lists. If PREFIX is non-nil,
-it is prepended to each TEXT value."
+Returns a list of (DAY STATE TEXT BODY) lists. If PREFIX is non-nil,
+it is prepended to each TEXT value. If INCLUDE-BODY is non-nil, BODY
+contains the task body; otherwise BODY is \"\"."
   (when (file-exists-p file-path)
     (let ((prefix (or prefix ""))
           tasks)
@@ -585,7 +611,8 @@ it is prepended to each TEXT value."
           (while (re-search-forward
                   "^\\*+ \\(NEXT\\|IN-PROGRESS\\|TODO\\|WAITING\\|MEETING-SCHEDULED\\) \\(.+\\)$" nil t)
             (let ((state (match-string 1))
-                  (text (match-string 2)))
+                  (text (match-string 2))
+                  (body (if include-body (my/extract-body-at-heading) "")))
               (dolist (day my/day-tags)
                 (when (string-match (concat ":" day ":") text)
                   (let* ((clean-text (replace-regexp-in-string
@@ -594,7 +621,7 @@ it is prepended to each TEXT value."
                          (final-text (if (string-empty-p trimmed-prefix)
                                          clean-text
                                        (concat trimmed-prefix " " clean-text))))
-                    (push (list day state final-text) tasks))))))))
+                    (push (list day state final-text body) tasks))))))))
       (nreverse tasks))))
 
 (defun my/sync-this-week ()
@@ -603,18 +630,22 @@ Scans all task files (via :TASK_FILE: properties) for tasks tagged with
 day names (:MONDAY:, :TUESDAY:, etc.) and inserts them under the matching
 day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
   (save-excursion
-    ;; Collect all (task-file . prefix) pairs
-    (let (all-task-files all-day-tasks)
+    ;; Collect (task-file prefix sync-body) triples per project
+    (let (all-task-files seen-files all-day-tasks)
       (org-map-entries
        (lambda ()
          (let ((task-file (org-entry-get nil "TASK_FILE"))
-               (prefix (org-entry-get nil "PREFIX")))
-           (when (and task-file (not (assoc task-file all-task-files)))
-             (push (cons task-file prefix) all-task-files)))))
+               (prefix (org-entry-get nil "PREFIX"))
+               (sync-body (org-entry-get nil "SYNC_BODY")))
+           (when (and task-file (not (member task-file seen-files)))
+             (push task-file seen-files)
+             (push (list task-file prefix sync-body) all-task-files)))))
       ;; Extract day-tagged tasks from all files
       (dolist (entry all-task-files)
-        (let ((day-tasks (my/extract-day-tagged-tasks-from-file
-                          (car entry) (cdr entry))))
+        (let* ((sync-body (nth 2 entry))
+               (include-body (member sync-body '("week" "both")))
+               (day-tasks (my/extract-day-tagged-tasks-from-file
+                           (nth 0 entry) (nth 1 entry) include-body)))
           (setq all-day-tasks (append all-day-tasks day-tasks))))
       ;; Find the THIS WEEK heading
       (goto-char (point-min))
@@ -652,7 +683,12 @@ day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
                     (dolist (task day-tasks)
                       (insert (format "*** %s %s :%s:SYNCED:\n"
                                       (nth 1 task) (nth 2 task)
-                                      (nth 0 task))))))))))))))
+                                      (nth 0 task)))
+                      (let ((body (nth 3 task)))
+                        (when (and body (not (string-empty-p body)))
+                          (insert body)
+                          (unless (string-suffix-p "\n" body)
+                            (insert "\n")))))))))))))))
 
 (with-eval-after-load 'org
   (define-key org-mode-map (kbd "C-c s") #'my/sync-next-tasks))
