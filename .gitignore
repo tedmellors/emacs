@@ -1,1 +1,8 @@
 todo.org
+
+# Machine-local customizations (auto-created by .emacs bootstrap)
+.emacs.d/custom-imports.el
+.emacs.d/custom-imports.elc
+
+# Personal-only packages (loaded via custom-imports.el, not on work machines)
+.emacs.d/site-lisp/trm-git/

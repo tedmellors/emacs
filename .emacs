@@ -859,3 +859,20 @@ day header in THIS WEEK as :SYNCED: entries. Manual entries are preserved."
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+;; --- machine-local custom imports ------------------------------------
+;; Personal-only config (local packages, API keys, experimental code)
+;; that isn't shared via this repo.  File is gitignored; auto-created
+;; as a stub if missing so the load never errors on fresh machines.
+(let ((custom-imports-file
+       (expand-file-name "custom-imports.el" user-emacs-directory)))
+  (unless (file-exists-p custom-imports-file)
+    (with-temp-file custom-imports-file
+      (insert ";;; custom-imports.el --- machine-local config, not in git -*- lexical-binding: t; -*-\n\n")
+      (insert ";; Personal-only Emacs config for this machine.  Gitignored.\n")
+      (insert ";; Add (add-to-list 'load-path ...) + (require ...) for local packages,\n")
+      (insert ";; API keys, experimental bindings, or anything you don't want on\n")
+      (insert ";; shared work laptops.  Empty is fine.\n\n")
+      (insert "(provide 'custom-imports)\n")
+      (insert ";;; custom-imports.el ends here\n")))
+  (load custom-imports-file t))
