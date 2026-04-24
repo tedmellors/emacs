@@ -33,6 +33,7 @@ mkdir -p ~/.emacs.d/site-lisp
 cd ~/.emacs.d/site-lisp
 git clone https://github.com/manzaltu/claude-code-ide.el claude-code-ide
 git clone https://github.com/lizqwerscott/mcp.el mcp
+git clone https://github.com/tedmellors/org-weekly.git org-weekly
 cd ~/.emacs.d
 git clone https://github.com/tedmellors/specflow.git specflow
 ```
@@ -91,6 +92,7 @@ mkdir -p ~/.emacs.d/site-lisp
 cd ~/.emacs.d/site-lisp
 git clone https://github.com/manzaltu/claude-code-ide.el claude-code-ide
 git clone https://github.com/lizqwerscott/mcp.el mcp
+git clone https://github.com/tedmellors/org-weekly.git org-weekly
 cd ~/.emacs.d
 git clone https://github.com/tedmellors/specflow.git specflow
 ```
