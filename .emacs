@@ -554,18 +554,31 @@ Preserves checkbox if current item has one."
  )
 
 ;; --- machine-local custom imports ------------------------------------
-;; Personal-only config (local packages, API keys, experimental code)
-;; that isn't shared via this repo.  File is gitignored; auto-created
-;; as a stub if missing so the load never errors on fresh machines.
+;; Two-layer personal config:
+;;   1. emacs-personal repo (private, cloned on personal machines only)
+;;      — cross-machine personal config shared across all personal boxes
+;;   2. ~/.emacs.d/custom-imports.el — machine-local overrides, gitignored
+;;
+;; The stub below auto-creates custom-imports.el if missing, so the load
+;; never errors on fresh machines.  Personal machines: stub loads the
+;; emacs-personal repo if cloned.  Work laptops: stub stays empty.
 (let ((custom-imports-file
        (expand-file-name "custom-imports.el" user-emacs-directory)))
   (unless (file-exists-p custom-imports-file)
     (with-temp-file custom-imports-file
       (insert ";;; custom-imports.el --- machine-local config, not in git -*- lexical-binding: t; -*-\n\n")
       (insert ";; Personal-only Emacs config for this machine.  Gitignored.\n")
-      (insert ";; Add (add-to-list 'load-path ...) + (require ...) for local packages,\n")
-      (insert ";; API keys, experimental bindings, or anything you don't want on\n")
-      (insert ";; shared work laptops.  Empty is fine.\n\n")
+      (insert ";;\n")
+      (insert ";; Two-layer pattern:\n")
+      (insert ";;   1. emacs-personal repo (~/.emacs.d/site-lisp/emacs-personal/)\n")
+      (insert ";;      — cross-machine personal config (same on every personal machine)\n")
+      (insert ";;   2. this file — machine-local overrides (different per machine, not in git)\n\n")
+      (insert ";; Cross-machine personal layer (clone: git@github.com:tedmellors/emacs-personal.git)\n")
+      (insert "(let ((emacs-personal-dir (expand-file-name \"site-lisp/emacs-personal\" user-emacs-directory)))\n")
+      (insert "  (when (file-directory-p emacs-personal-dir)\n")
+      (insert "    (add-to-list 'load-path emacs-personal-dir)\n")
+      (insert "    (require 'emacs-personal)))\n\n")
+      (insert ";; Machine-local overrides go below this line.\n\n\n")
       (insert "(provide 'custom-imports)\n")
       (insert ";;; custom-imports.el ends here\n")))
   (load custom-imports-file t))
